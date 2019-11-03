@@ -1,6 +1,7 @@
 # API endpoints
+from flask import request, jsonify
 from flask_restful import Resource, reqparse
-from models import UserModel, RevokedTokenModel
+from models import User, RevokedToken, Integration
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 
 parser = reqparse.RequestParser()
@@ -12,12 +13,12 @@ class UserRegistration(Resource):
     def post(self):
         data = parser.parse_args()
         
-        if UserModel.find_by_username(data['username']):
+        if User.find_by_username(data['username']):
             return {'message': 'User {} already exists'.format(data['username'])}
         
-        new_user = UserModel(
+        new_user = User(
             username = data['username'],
-            password = UserModel.generate_hash(data['password'])
+            password = User.generate_hash(data['password'])
         )
         
         try:
@@ -36,14 +37,14 @@ class UserRegistration(Resource):
 class UserLogin(Resource):
     def post(self):
         data = parser.parse_args()
-        current_user = UserModel.find_by_username(data['username'])
+        current_user = User.find_by_username(data['username'])
 
         if not current_user:
             return {'message': 'User {} doesn\'t exist'.format(data['username'])}
         
-        if UserModel.verify_hash(data['password'], current_user.password):
-            access_token = create_access_token(identity = data['username'])
-            refresh_token = create_refresh_token(identity = data['username'])
+        if User.verify_hash(data['password'], current_user.password):
+            access_token = create_access_token(identity = current_user.id)
+            refresh_token = create_refresh_token(identity = current_user.id)
             return {
                 'message': 'Logged in as {}'.format(current_user.username),
                 'access_token': access_token,
@@ -58,7 +59,7 @@ class UserLogoutAccess(Resource):
     def post(self):
         jti = get_raw_jwt()['jti']
         try:
-            revoked_token = RevokedTokenModel(jti = jti)
+            revoked_token = RevokedToken(jti = jti)
             revoked_token.add()
             return {'message': 'Access token has been revoked'}
         except:
@@ -70,7 +71,7 @@ class UserLogoutRefresh(Resource):
     def post(self):
         jti = get_raw_jwt()['jti']
         try:
-            revoked_token = RevokedTokenModel(jti = jti)
+            revoked_token = RevokedToken(jti = jti)
             revoked_token.add()
             return {'message': 'Refresh token has been revoked'}
         except:
@@ -88,15 +89,56 @@ class TokenRefresh(Resource):
 class AllUsers(Resource):
     @jwt_required
     def get(self):
-        return UserModel.return_all()
+        return User.return_all()
     
     def delete(self):
-        return UserModel.delete_all()
+        return User.delete_all()
 
 
 class SecretResource(Resource):
     @jwt_required
     def get(self):
         return {
-            'answer': 42
+            'answer': 42,
+            'user': get_jwt_identity()
         }
+
+
+class SaveIntegration(Resource):
+	@jwt_required
+	def post(self):
+
+		new_data = Integration(
+			user_id = get_jwt_identity(),
+            messenger = request.form['messenger'],
+            whatsapp = request.form['whatsapp'],
+            line = request.form['line'],
+            twitter = request.form['twitter'],
+            telegram = request.form['telegram'],
+            skype = request.form['skype'],
+            viber = request.form['viber'],
+            sms = request.form['sms'],
+            slack = request.form['slack']
+        )
+
+		if Integration.find_by_user_id(get_jwt_identity()):
+			try:
+				new_data.update_data()
+				return {
+					'message': 'Integration successfully updated',
+					'data': new_data.serialize(),
+					'status': 200
+				}, 200
+			except:
+				return {'message': 'Something went wrong on update data', 'status': 500}, 500
+
+		try:
+			new_data.save_to_db()
+			return {
+				'message': 'Integration successfully saved',
+				'data': new_data.serialize(),
+				'status': 200
+			}, 200
+		except:
+			return {'message': 'Something went wrong on save data', 'status': 500}, 500
+
