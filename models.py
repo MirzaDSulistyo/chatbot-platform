@@ -1,4 +1,5 @@
 # database models
+from flask import json
 from sqlalchemy import exc
 from app import db
 from passlib.hash import pbkdf2_sha256 as sha256
@@ -10,6 +11,7 @@ class User(db.Model):
     username = db.Column(db.String(120), unique = True, nullable = False)
     password = db.Column(db.String(120), nullable = False)
     integrations = db.relationship('Integration', backref='user', lazy=True)
+    intents_bot = db.relationship('Intent', backref='user', lazy=True)
 
     def save_to_db(self):
         db.session.add(self)
@@ -125,6 +127,7 @@ class Intent(db.Model):
 	__tablename__ = 'intents_bot'
 
 	id = db.Column(db.Integer, primary_key = True)
+	user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 	name = db.Column(db.String(), nullable = False)
 	utterances = db.Column(db.String(), nullable = False)
 	responses = db.Column(db.String(), nullable = False)
@@ -132,9 +135,44 @@ class Intent(db.Model):
 	context_set = db.Column(db.String(), nullable = False)
 	context_filter = db.Column(db.String(), nullable = False)
 
+	def __init__(self, user_id, name, utterances, responses, entities, context_set, context_filter):
+		self.user_id = user_id
+		self.name = name
+		self.utterances = utterances
+		self.responses = responses
+		self.entities = entities
+		self.context_set = context_set
+		self.context_filter = context_filter
+
 	def save_to_db(self):
 		db.session.add(self)
 		db.session.commit()
+
+	@classmethod
+	def return_all(cls):
+		def to_json(x):
+			return {
+				'intent': x.name,
+				'utterances': json.loads(x.utterances),
+				'responses': json.loads(x.responses),
+				'entities': json.loads(x.entities)
+			}
+		return {'intents': list(map(lambda x: to_json(x), Intent.query.all()))}
+
+	@classmethod
+	def find_by_name(cls, name):
+		return cls.query.filter_by(name = name).first()
+
+	def serialize(self):
+		return {
+			'user_id': self.user_id, 
+			'name': self.name,
+			'utterances': self.utterances,
+			'responses': self.responses,
+			'entities': self.entities,
+			'context_set': self.context_set,
+			'context_filter': self.context_filter
+		}
 
 class ClassifierProp(db.Model):
 	__tablename__ = 'intents'

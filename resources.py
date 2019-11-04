@@ -1,7 +1,7 @@
 # API endpoints
 from flask import request, jsonify, json
 from flask_restful import Resource, reqparse
-from models import User, RevokedToken, Integration
+from models import User, RevokedToken, Integration, Intent
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 
 parser = reqparse.RequestParser()
@@ -144,16 +144,42 @@ class SaveIntegration(Resource):
 
 
 class SaveIntents(Resource):
-	def post(self):
+    @jwt_required
+    def post(self):
 
-		array = request.form.getlist('intents[]')
+        dataUtterances = request.form.getlist('utterances[]')
+        dataResponses = request.form.getlist('responses[]')
+        dataEntities = request.form.getlist('entities[]')
 
-		print(request.form.getlist('intents[]'))
+        print(json.dumps(dataUtterances))
+        print(dataResponses)
+        print(dataEntities)
 
-		return {
-			'message': 'Intents Saving',
-			'data': array,
-			'string': json.dumps(array),
-			'status': 200
-		}, 200
+        new_data = Intent(
+            user_id = get_jwt_identity(),
+            name = request.form['name'],
+            utterances = json.dumps(dataUtterances),
+            responses = json.dumps(dataResponses),
+            entities = json.dumps(dataEntities),
+            context_set = request.form['context_set'],
+            context_filter = request.form['context_filter']
+        )
 
+        existedData = Intent.find_by_name(request.form['name'])
+
+        if not existedData:
+            try:
+                new_data.save_to_db()
+                return {
+                    'message': 'Intent successfully saved',
+                    'data': new_data.serialize(),
+                    'status': 200
+                }, 200
+            except:
+                return {'message': 'Something went wrong on save data', 'status': 500}, 500
+        return {'message': 'Date cannot be duplicate', 'status': 500}, 500
+
+class ShowIntents(Resource):
+    @jwt_required
+    def get(self):
+        return Intent.return_all()
