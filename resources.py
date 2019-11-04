@@ -1,5 +1,5 @@
 # API endpoints
-from flask import request, jsonify
+from flask import request, jsonify, json
 from flask_restful import Resource, reqparse
 from models import User, RevokedToken, Integration
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
@@ -141,4 +141,19 @@ class SaveIntegration(Resource):
 			}, 200
 		except:
 			return {'message': 'Something went wrong on save data', 'status': 500}, 500
+
+
+class SaveIntents(Resource):
+	def post(self):
+
+		array = request.form.getlist('intents[]')
+
+		print(request.form.getlist('intents[]'))
+
+		return {
+			'message': 'Intents Saving',
+			'data': array,
+			'string': json.dumps(array),
+			'status': 200
+		}, 200
 

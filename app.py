@@ -48,5 +48,7 @@ api.add_resource(resources.SecretResource, '/secret')
 
 api.add_resource(resources.SaveIntegration, '/integration/save')
 
+api.add_resource(resources.SaveIntents, '/intent/save')
+
 if __name__ == "__main__":
     app.run()
