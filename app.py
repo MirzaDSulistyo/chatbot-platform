@@ -52,6 +52,9 @@ api.add_resource(resources.SaveIntents, '/intent/save')
 api.add_resource(resources.ShowIntents, '/intent/show')
 
 api.add_resource(resources.GenerateBotProp, '/bot/generateprops')
+api.add_resource(resources.ShowAgent, '/bot/show')
+
+api.add_resource(resources.Training, '/bot/training')
 
 if __name__ == "__main__":
     app.run()

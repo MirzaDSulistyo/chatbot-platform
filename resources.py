@@ -14,6 +14,36 @@ from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 factory = StemmerFactory()
 stemmer = factory.create_stemmer()
 
+import tensorflow as tf
+sess = tf.Session()
+from keras import backend as K
+
+K.set_session(sess)
+K.set_learning_phase(0)
+
+import numpy as np
+import random
+
+from keras.applications import VGG19
+from tensorflow import keras
+from keras.models import Sequential, load_model
+from keras.layers import Dense, Activation
+from keras import utils
+from keras import layers
+from keras.optimizers import adam
+
+import matplotlib.pyplot as plt
+
+from tensorflow.python.saved_model import builder as saved_model_builder
+from tensorflow.python.saved_model import utils
+from tensorflow.python.saved_model import tag_constants, signature_constants
+from tensorflow.python.saved_model.signature_def_utils_impl import build_signature_def, predict_signature_def
+from tensorflow.contrib.session_bundle import exporter
+
+model_version = "2"
+
+graph = tf.get_default_graph()
+
 parser = reqparse.RequestParser()
 parser.add_argument('username', help = 'This field cannot be blank', required = True)
 parser.add_argument('password', help = 'This field cannot be blank', required = True)
@@ -257,3 +287,77 @@ class GenerateBotProp(Resource):
             }, 200
         except:
             return {'message': 'Something went wrong on saving data', 'status': 500}, 500
+
+class ShowAgent(Resource):
+    @jwt_required
+    def get(self):
+        agent = Agent.find_by_user_id(get_jwt_identity())
+        return {'agent': agent.serialize()}
+
+class Training(Resource):
+    @jwt_required
+    def get(self):
+        agent = Agent.find_by_user_id(get_jwt_identity())
+
+        classes = json.loads(agent.classes)
+        documents = json.loads(agent.documents)
+        words = json.loads(agent.words)
+
+        print (len(documents), "documents")
+        print (len(classes), "classes", classes)
+        print (len(words), "unique stemmed words", words)
+
+        global graph
+        with graph.as_default():
+            # create our training data
+            training = []
+            output = []
+            # create an empty array for our output
+            output_empty = [0] * len(classes)
+
+            # training set, bag of words for each sentence
+            for doc in documents:
+                # initialize our bag of words
+                bag = []
+                # list of tokenized words for the pattern
+                pattern_words = doc[0]
+                # stem each word
+                pattern_words = [stemmer.stem(word.lower()) for word in pattern_words]
+                # create our bag of words array
+                for w in words:
+                    bag.append(1) if w in pattern_words else bag.append(0)
+
+                # output is a '0' for each tag and '1' for current tag
+                output_row = list(output_empty)
+
+                output_row[classes.index(doc[1])] = 1
+
+                training.append([bag, output_row])
+            
+            # shuffle our features and turn into np.array
+            random.shuffle(training)
+            training = np.array(training)
+
+            # create train and test lists
+            train_x = list(training[:,0])
+            train_y = list(training[:,1])
+
+            model = Sequential()
+            model.add(Dense(8, input_shape=[len(train_x[0],)]))
+            model.add(Dense(8))
+            model.add(Dense(8))
+            model.add(Dense(len(train_y[0]), activation='softmax'))
+
+            model.summary()
+            model.compile(loss='categorical_crossentropy', optimizer=tf.train.AdamOptimizer(), metrics=['acc'])
+            history = model.fit(np.array(train_x), np.array(train_y), epochs=1000, batch_size=8)
+
+            model.save('models/model_ChatBot.h5')
+
+            history_dict = history.history
+            history_dict.keys()
+            acc = history.history['acc']
+            loss = history.history['loss']
+            epochs = range(1, len(acc) + 1)
+
+            return {'message': 'training agent done'}
