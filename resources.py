@@ -1,8 +1,18 @@
 # API endpoints
 from flask import request, jsonify, json
 from flask_restful import Resource, reqparse
-from models import User, RevokedToken, Integration, Intent
+from models import User, RevokedToken, Integration, Intent, Agent
 from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
+
+# import NLTK framework
+import nltk
+
+# import StemmerFactory class
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
+
+# create stemmer
+factory = StemmerFactory()
+stemmer = factory.create_stemmer()
 
 parser = reqparse.RequestParser()
 parser.add_argument('username', help = 'This field cannot be blank', required = True)
@@ -183,3 +193,67 @@ class ShowIntents(Resource):
     @jwt_required
     def get(self):
         return Intent.return_all()
+
+class GenerateBotProp(Resource):
+    @jwt_required
+    def post(self):
+        intents = Intent.return_all()
+
+        words = []
+        classes = []
+        documents = []
+        ignore_words = ['?']
+        # loop through each sentence in our intents patterns
+        for intent in intents['intents']:
+            for pattern in intent['utterances']:
+                # tokenize each word in the sentence
+                w = nltk.word_tokenize(pattern)
+                # add to our words list
+                words.extend(w)
+                # add to documents in our corpus
+                documents.append((w, intent['intent']))
+                # add to our classes list
+                if intent['intent'] not in classes:
+                    classes.append(intent['intent'])
+
+        # stem and lower each word and remove duplicates
+        words = [stemmer.stem(w.lower()) for w in words if w not in ignore_words]
+        words = sorted(list(set(words)))
+
+        # remove duplicates
+        classes = sorted(list(set(classes)))
+
+        print (len(documents), "documents")
+        print (len(classes), "classes", classes)
+        print (len(words), "unique stemmed words", words)
+
+        new_agent = Agent(
+			user_id = get_jwt_identity(),
+            name = request.form['name'],
+            words = json.dumps(words),
+            classes = json.dumps(classes),
+            documents = json.dumps(documents),
+            ignore_words = json.dumps(ignore_words),
+            agent_model_url = request.form['agent_model_url']
+        )
+
+        if Agent.find_by_user_id(get_jwt_identity()):
+            try:
+                new_agent.update_data()
+                return {
+                    'message': 'Agent successfully updated',
+                    'data': new_agent.serialize(),
+                    'status': 200
+                }, 200
+            except:
+                return {'message': 'Something went wrong on updating data', 'status': 500}, 500
+
+        try:
+            new_agent.save_to_db()
+            return {
+                'message': 'Agent successfully created',
+                'data': new_agent.serialize(),
+                'status': 200
+            }, 200
+        except:
+            return {'message': 'Something went wrong on saving data', 'status': 500}, 500

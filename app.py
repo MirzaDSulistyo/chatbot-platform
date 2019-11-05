@@ -11,7 +11,7 @@ ENV = 'dev'
 
 if ENV == 'dev' :
 	app.debug = True
-	app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123456@localhost/newchatbot'
+	app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123456@localhost/chatbotagent'
 else :
 	app.debug = False
 	app.config['SQLALCHEMY_DATABASE_URI'] = ''
@@ -50,6 +50,8 @@ api.add_resource(resources.SaveIntegration, '/integration/save')
 
 api.add_resource(resources.SaveIntents, '/intent/save')
 api.add_resource(resources.ShowIntents, '/intent/show')
+
+api.add_resource(resources.GenerateBotProp, '/bot/generateprops')
 
 if __name__ == "__main__":
     app.run()

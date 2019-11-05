@@ -11,7 +11,8 @@ class User(db.Model):
     username = db.Column(db.String(120), unique = True, nullable = False)
     password = db.Column(db.String(120), nullable = False)
     integrations = db.relationship('Integration', backref='user', lazy=True)
-    intents_bot = db.relationship('Intent', backref='user', lazy=True)
+    intents = db.relationship('Intent', backref='user', lazy=True)
+    agent = db.relationship('Agent', backref='user', lazy=True)
 
     def save_to_db(self):
         db.session.add(self)
@@ -124,7 +125,7 @@ class Integration(db.Model):
 		}
 
 class Intent(db.Model):
-	__tablename__ = 'intents_bot'
+	__tablename__ = 'intents'
 
 	id = db.Column(db.Integer, primary_key = True)
 	user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -174,19 +175,55 @@ class Intent(db.Model):
 			'context_filter': self.context_filter
 		}
 
-class ClassifierProp(db.Model):
-	__tablename__ = 'intents'
+class Agent(db.Model):
+	__tablename__ = 'agents'
 
 	id = db.Column(db.Integer, primary_key = True)
+	user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 	name = db.Column(db.String(), nullable = False)
 	words = db.Column(db.String(), nullable = False)
 	classes = db.Column(db.String(), nullable = False)
 	documents = db.Column(db.String(), nullable = False)
 	ignore_words = db.Column(db.String(), nullable = False)
-	bot_model_url = db.Column(db.String(), nullable = False)
+	agent_model_url = db.Column(db.String(), nullable = False)
 
 	def save_to_db(self):
 		db.session.add(self)
 		db.session.commit()
+
+	def update_data(self):
+		data = self.query.filter_by(user_id = self.user_id).first()
+		data.name = self.name
+		data.words = self.words
+		data.classes = self.classes
+		data.documents = self.documents
+		data.ignore_words = self.ignore_words
+		data.agent_model_url = self.agent_model_url
+
+		db.session.commit()
+
+	@classmethod
+	def find_by_user_id(cls, id):
+		return cls.query.filter_by(user_id = id).first()
+
+	def __init__(self, user_id, name, words, classes, documents, ignore_words, agent_model_url):
+		self.user_id = user_id
+		self.name = name
+		self.words = words
+		self.classes = classes
+		self.documents = documents
+		self.ignore_words = ignore_words
+		self.agent_model_url = agent_model_url
+
+	def serialize(self):
+		return {
+			'user_id': self.user_id, 
+			'name': self.name,
+			'words': self.words,
+			'classes': self.classes,
+			'documents': self.documents,
+			'ignore_words': self.ignore_words,
+			'agent_model_url': self.agent_model_url
+		}
 
 
