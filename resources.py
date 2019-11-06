@@ -352,7 +352,7 @@ class Training(Resource):
             model.compile(loss='categorical_crossentropy', optimizer=tf.train.AdamOptimizer(), metrics=['acc'])
             history = model.fit(np.array(train_x), np.array(train_y), epochs=1000, batch_size=8)
 
-            model.save('models/model_ChatBot.h5')
+            model.save('models/model_ChatBot_02.h5')
 
             history_dict = history.history
             history_dict.keys()
