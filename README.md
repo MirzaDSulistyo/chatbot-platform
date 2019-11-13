@@ -41,3 +41,17 @@ Now apply the migrations to the database using
 python manage.py db upgrade
 
 ref : https://medium.com/@dushan14/create-a-web-application-with-python-flask-postgresql-and-deploy-on-heroku-243d548335cc
+
+
+ref flask :
+https://medium.com/@dushan14/create-a-web-application-with-python-flask-postgresql-and-deploy-on-heroku-243d548335cc
+https://scotch.io/tutorials/build-a-restful-api-with-flask-the-tdd-way
+https://codeburst.io/jwt-authorization-in-flask-c63c1acf4eeb
+https://flask-sqlalchemy.palletsprojects.com/en/2.x/models/
+https://www.codementor.io/garethdwyer/building-a-crud-application-with-flask-and-sqlalchemy-dm3wv7yu2
+
+
+ref flask keras :
+https://stackoverflow.com/questions/49400440/using-keras-model-in-flask-app-with-threading
+https://kobkrit.com/tensor-something-is-not-an-element-of-this-graph-error-in-keras-on-flask-web-server-4173a8fe15e1
+https://towardsdatascience.com/deploying-keras-deep-learning-models-with-flask-5da4181436a2

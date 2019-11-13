@@ -81,9 +81,10 @@ api.add_resource(resources.ShowAgent, '/bot/show')
 api.add_resource(resources.Training, '/bot/training')
 
 # load the model, and pass in the custom metric function
-global graph
+# global graph
 graph = tf.get_default_graph()
 model = load_model('models/model_ChatBot.h5')
+print("################LOADING MODEL#####################")
 
 # create a data structure to hold user context
 context = {}
