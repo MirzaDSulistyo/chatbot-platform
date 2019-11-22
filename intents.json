@@ -1,0 +1,39 @@
+{
+    "intents" : [
+        {
+            "intent" : "greeting",
+            "utterances" : ["Hi", "Apa kabar?", "Halo", "Hello", "Selamat Pagi", "Selamat Siang", "Selamat Sore", "Selamat Malam"],
+            "responses" : ["Halo, terima kasih sudah menghubungi.", "Senang bisa bertemu kembali", "Halo, apa yang bisa kami bantu?"]
+        },
+        {
+            "intent" : "goodbye",
+            "utterances" : ["Bye", "Selamat Tinggal", "Goodbye"],
+            "responses" : ["Sampai jumpa lagi, terima kasih.", "Semoga harimu menyenangkan", "Bye!"]
+        },
+        {
+            "intent" : "openingHours",
+            "utterances" : ["Buka", "Buka jam berapa?", "Jam buka?"],
+            "responses" : ["Kami buka jam 08:00 sampai 17:00"]
+        },
+        {
+            "intent" : "paymentMethod",
+            "utterances" : ["payment", "pembayaran", "Apakah menerima kartu kredit?", "visa", "mastercard", "debit"],
+            "responses" : ["Kami menerima pembayaran cash, debit dan juga kartu kredit"]
+        },
+        {
+            "intent" : "booking",
+            "utterances" : ["saya ingin booking", "booking", "appointment", "janji"],
+            "responses" : ["Baik, Boleh tahu nama Anda?"]
+        },
+        {
+            "intent" : "services",
+            "utterances" : ["layanan apa saja?", "layanan", "service"],
+            "responses" : []
+        },
+        {
+            "intent" : "storeLocation",
+            "utterances" : ["lokasi dimana ya?", "lokasi dimana", "lokasi", "tempat dimana", "tempat nya dimana"],
+            "responses" : []
+        }
+    ]
+}
